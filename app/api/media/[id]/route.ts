@@ -1,5 +1,4 @@
-//app/api/media/[id]/route.ts
-
+// app/api/media/[id]/route.ts
 import { supabase } from "../../../../lib/supabaseClient";
 import { NextResponse } from "next/server";
 
@@ -7,8 +6,8 @@ import { NextResponse } from "next/server";
 interface ReviewForResponse {
   id: string;
   user_id: string;
-  user_email: string | null;
   username: string | null;
+  email: string | null;
   rating: number;
   text: string;
   created_at: string;
@@ -37,12 +36,13 @@ export async function GET(
       return NextResponse.json({ error: mediaError.message }, { status: 500 });
     }
 
-    // Получаем отзывы
+    // Получаем отзывы с данными пользователей через JOIN
     let reviews: ReviewForResponse[] = [];
     try {
+      // 1. Сначала получаем отзывы
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("reviews")
-        .select("id, user_id, user_email, username, rating, text, created_at")
+        .select("id, user_id, rating, text, created_at")
         .eq("media_id", id)
         .order("created_at", { ascending: false });
 
@@ -50,7 +50,35 @@ export async function GET(
         console.error("Error fetching reviews:", reviewsError);
         reviews = [];
       } else {
-        reviews = (reviewsData || []) as ReviewForResponse[];
+        // 2. Получаем ID всех пользователей
+        const userIds = [...new Set(reviewsData?.map(r => r.user_id) || [])];
+        
+        // 3. Получаем данные профилей отдельно
+        let profilesMap = {};
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, username, email")
+            .in("id", userIds);
+          
+          if (profilesData) {
+            profilesMap = profilesData.reduce((acc, profile) => {
+              acc[profile.id] = profile;
+              return acc;
+            }, {});
+          }
+        }
+
+        // 4. Объединяем данные
+        reviews = (reviewsData || []).map((review: any) => ({
+          id: review.id,
+          user_id: review.user_id,
+          username: profilesMap[review.user_id]?.username || null,
+          email: profilesMap[review.user_id]?.email || null,
+          rating: review.rating,
+          text: review.text,
+          created_at: review.created_at
+        })) as ReviewForResponse[];
       }
     } catch (reviewFetchError) {
       console.warn("Error fetching reviews:", reviewFetchError);
