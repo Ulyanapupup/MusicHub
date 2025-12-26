@@ -54,22 +54,11 @@ export default function HeaderClient() {
   }
 
   const handleLogout = async () => {
-    try {
-      // Простой выход без сложной логики
-      await supabase.auth.signOut();
-      
-      // Сразу обновляем UI
-      setUser(null);
-      setUsername("");
-      
-      // Переходим на главную
-      window.location.href = "/"; // Используем window.location для полного обновления
-      
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Если ошибка, все равно перенаправляем на главную
-      window.location.href = "/";
+    // Просто очищаем ВСЕ localStorage и перезагружаем
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
     }
+    window.location.href = "/";
   };
 
   return (
