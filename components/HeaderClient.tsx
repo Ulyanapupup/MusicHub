@@ -53,6 +53,7 @@ export default function HeaderClient() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUsername("");
+    router.refresh();
     router.push("/");
   };
 
@@ -94,3 +95,4 @@ export default function HeaderClient() {
     </header>
   );
 }
+
