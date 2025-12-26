@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 export default function HeaderClient() {
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string>("");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,31 +54,21 @@ export default function HeaderClient() {
   }
 
   const handleLogout = async () => {
-    if (isLoggingOut) return;
-    
-    setIsLoggingOut(true);
     try {
-      // 1. Выходим из Supabase Auth
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      // 2. Сбрасываем локальное состояние
+      // Простой выход без сложной логики
+      await supabase.auth.signOut();
+      
+      // Сразу обновляем UI
       setUser(null);
       setUsername("");
-
-      // 3. Принудительно обновляем данные страницы
-      router.refresh();
-
-      // 4. Переходим на главную с небольшой задержкой
-      setTimeout(() => {
-        router.push("/");
-        setIsLoggingOut(false);
-      }, 300);
-
+      
+      // Переходим на главную
+      window.location.href = "/"; // Используем window.location для полного обновления
+      
     } catch (error) {
-      console.error("Ошибка при выходе:", error);
-      setIsLoggingOut(false);
-      alert("Не удалось выйти из системы. Попробуйте еще раз.");
+      console.error("Logout error:", error);
+      // Если ошибка, все равно перенаправляем на главную
+      window.location.href = "/";
     }
   };
 
@@ -103,18 +92,15 @@ export default function HeaderClient() {
               </span>
               <button
                 onClick={handleLogout}
-                onTouchStart={(e) => e.preventDefault()} // Для мобильных устройств
-                disabled={isLoggingOut}
-                className="bg-red-100 text-red-600 hover:bg-red-200 px-4 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                className="bg-red-100 text-red-600 hover:bg-red-200 px-4 py-2 rounded-full text-sm font-medium transition-colors"
               >
-                {isLoggingOut ? "Выход..." : "Выйти"}
+                Выйти
               </button>
             </>
           ) : (
             <button
               onClick={() => router.push("/login")}
-              onTouchStart={(e) => e.preventDefault()} // Для мобильных устройств
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 font-medium active:scale-95"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 font-medium"
             >
               Войти
             </button>
@@ -124,4 +110,3 @@ export default function HeaderClient() {
     </header>
   );
 }
-
