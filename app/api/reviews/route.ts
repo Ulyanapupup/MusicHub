@@ -1,5 +1,4 @@
 // app/api/reviews/route.ts
-
 import { supabase } from "../../../lib/supabaseClient";
 import { NextResponse } from "next/server";
 
@@ -45,69 +44,24 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Получаем данные пользователя
-    let user_email = '';
-    let username = '';
-
-    // Сначала пробуем получить из profiles
+    // 2. Проверяем, существует ли пользователь в profiles
     const { data: profile } = await supabase
       .from("profiles")
-      .select("email, username")
+      .select("id")
       .eq("id", user_id)
       .maybeSingle();
 
-    if (profile) {
-      user_email = profile.email || '';
-      username = profile.username || '';
-      console.log("✅ Данные из profiles:", { user_email, username });
-    } else {
-      console.warn("⚠️ Профиль не найден для user_id:", user_id);
-      
-      // Если профиля нет, создаем его
-      try {
-        // Получаем email из auth
-        const { data: authUser } = await supabase.auth.admin.getUserById(user_id);
-        const authEmail = authUser?.user?.email || '';
-        
-        if (authEmail) {
-          // Создаем профиль с username из email
-          const generatedUsername = authEmail.split('@')[0];
-          
-          const { error: createProfileError } = await supabase
-            .from("profiles")
-            .upsert({
-              id: user_id,
-              email: authEmail,
-              username: generatedUsername,
-              created_at: new Date().toISOString()
-            });
-
-          if (!createProfileError) {
-            user_email = authEmail;
-            username = generatedUsername;
-            console.log("✅ Профиль создан автоматически:", { user_email, username });
-          }
-        }
-      } catch (profileCreateError) {
-        console.warn("⚠️ Не удалось создать профиль:", profileCreateError);
-      }
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Пользователь не найден" },
+        { status: 404 }
+      );
     }
 
-    // 3. Fallback
-    if (!user_email) {
-      user_email = body.user_email || `user_${user_id.substring(0, 8)}`;
-    }
-    
-    if (!username) {
-      username = user_email.split('@')[0] || `user_${user_id.substring(0, 8)}`;
-    }
-
-    // 4. Создаем отзыв
+    // 3. Создаем отзыв (только с user_id, без email и username)
     console.log("📝 Создаем отзыв:", {
       media_id,
       user_id,
-      user_email: user_email.substring(0, 20) + '...',
-      username,
       rating,
       text_length: text.length
     });
@@ -117,8 +71,6 @@ export async function POST(req: Request) {
       .insert({
         media_id,
         user_id,
-        user_email,
-        username,
         rating,
         text,
         created_at: new Date().toISOString()
