@@ -27,7 +27,7 @@ export default function RootLayout({
           <div className="max-w-7xl mx-auto px-4 text-center">
             <h2 className="text-2xl font-bold mb-2">🎵 MusicHub</h2>
             <p className="text-gray-300 mb-4">
-              © {new Date().getFullYear()Поздняк Ульяна}
+              © {new Date().getFullYear()} Поздняк Ульяна
             </p>
             <div className="text-sm text-gray-400">
               Платформа для обмена мнениями о музыкальных группах
