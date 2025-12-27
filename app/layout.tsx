@@ -30,7 +30,7 @@ export default function RootLayout({
               © {new Date().getFullYear()} Поздняк Ульяна
             </p>
             <div className="text-sm text-gray-400">
-              Платформа для обмена мнениями о музыкальных группах
+              Платформа для обмена мнениями о музыке
             </div>
           </div>
         </footer>
